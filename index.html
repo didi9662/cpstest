@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test de Clics por Segundo</title>
+<style>
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    font-family: 'Arial', sans-serif;
+    background-color: #e0f7fa;
+    color: #00796b;
+    border: #002f29 solid 5px;
+    border-radius: 10px;
+    text-align: center;
+    margin: 10px;
+    padding: 20px;
+}
+html {
+    height: 100%;
+    background-color: #00a996;
+}
+h1 {
+    margin-bottom: 20px;
+    font-size: 36px;
+}
+.menu {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+.menu button {
+    padding: 10px 20px;
+    font-size: 18px;
+    cursor: pointer;
+    background-color: #00796b;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+.menu button:hover {
+    background-color: #004d40;
+}
+.menu button.active {
+    background-color: #002f29;
+}
+#clickButton, #spaceButton {
+    padding: 20px 40px;
+    font-size: 24px;
+    cursor: pointer;
+    background-color: #00796b;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.3s, transform 0.1s;
+    margin: 10px 0;
+}
+#clickButton:hover, #spaceButton:hover {
+    background-color: #004d40;
+}
+#clickButton:active, #spaceButton:active {
+    transform: scale(0.95);
+}
+#spaceButton {
+    display: none;
+}
+#result {
+    margin-top: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #d32f2f;
+}
+#instructions {
+    margin-top: 10px;
+    font-size: 18px;
+    color: #555;
+}
+#timeInput, #timeInputSpace {
+    margin: 20px 0;
+    font-size: 18px;
+    padding: 5px;
+    width: 100px;
+    text-align: center;
+    border: 2px solid #00796b;
+    border-radius: 5px;
+}
+.hidden {
+    display: none;
+}
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+.modal-content {
+    background-color: #e0f7fa;
+    margin: 15% auto;
+    padding: 20px;
+    border: 3px solid #00796b;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 500px;
+}
+.close {
+    color: #00796b;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.close:hover {
+    color: #004d40;
+}
+</style>
+</head>
+<body>
+
+<h1>Test de Clics por Segundo</h1>
+
+<div class="menu">
+    <button id="btnClicker" class="active">Clicker de Botón</button>
+    <button id="btnSpacebar">Clicker de Barra</button>
+</div>
+
+<div id="clickerSection">
+    <div id="instructions">¡Haz clic en el botón tantas veces como puedas!</div>
+    <input type="number" id="timeInput" placeholder="Segundos" min="1" max="60" value="5" />
+    <button id="clickButton">¡Haz clic aquí!</button>
+</div>
+
+<div id="spacebarSection" class="hidden">
+    <div id="instructionsSpace"><strong>¡Presiona la barra espaciadora tantas veces como puedas!</strong></div>
+    <input type="number" id="timeInputSpace" placeholder="Segundos" min="1" max="60" value="5" />
+    <button id="spaceButton">Barra espaciadora (usa tu teclado)</button>
+</div>
+
+<div id="result"></div>
+
+<!-- Modal para mostrar los resultados -->
+<div id="resultModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2 id="modalTitle">Resultados del Test</h2>
+        <p id="modalContent"></p>
+    </div>
+</div>
+
+<script>
+let clicks = 0; // Contador de clics
+let isTesting = false; // Estado del test
+let testDuration = 5; // Duración predeterminada del test
+let timeoutID; // ID del temporizador para detenerlo si es necesario
+let isSpacePressed = false; // Control para evitar múltiples pulsaciones rápidas
+
+// Elementos del DOM
+const clickButton = document.getElementById('clickButton');
+const spaceButton = document.getElementById('spaceButton');
+const timeInput = document.getElementById('timeInput');
+const timeInputSpace = document.getElementById('timeInputSpace');
+const resultDiv = document.getElementById('result');
+const btnClicker = document.getElementById('btnClicker');
+const btnSpacebar = document.getElementById('btnSpacebar');
+const clickerSection = document.getElementById('clickerSection');
+const spacebarSection = document.getElementById('spacebarSection');
+const modal = document.getElementById('resultModal');
+const modalContent = document.getElementById('modalContent');
+const closeBtn = document.getElementsByClassName('close')[0];
+
+// Manejadores de eventos para el menú
+btnClicker.addEventListener('click', function() {
+    clickerSection.classList.remove('hidden');
+    spacebarSection.classList.add('hidden');
+    btnClicker.classList.add('active');
+    btnSpacebar.classList.remove('active');
+    stopTest(); // Detener cualquier test en curso
+});
+
+btnSpacebar.addEventListener('click', function() {
+    clickerSection.classList.add('hidden');
+    spacebarSection.classList.remove('hidden');
+    btnClicker.classList.remove('active');
+    btnSpacebar.classList.add('active');
+    stopTest(); // Detener cualquier test en curso
+});
+
+// Manejador para el clicker de botón
+clickButton.addEventListener('click', function () {
+    if (!isTesting) {
+        const inputValue = timeInput.value.trim();
+
+        // Validación del tiempo ingresado
+        if (inputValue === "" || isNaN(inputValue) || Number(inputValue) <= 0 || Number(inputValue) > 60) {
+            alert("Por favor, introduce un número válido entre 1 y 60.");
+            timeInput.value = "5"; // Restablecer a un valor predeterminado
+            return;
+        }
+
+        testDuration = parseInt(inputValue); // Asignar duración válida
+        startTest(); // Iniciar el test
+    } else {
+        registerClick(); // Registrar clic
+    }
+});
+
+// Manejador para el clicker de barra espaciadora
+document.addEventListener('keydown', function(event) {
+    if (event.code === 'Space' && !spacebarSection.classList.contains('hidden')) {
+        event.preventDefault(); // Prevenir el comportamiento por defecto de la barra espaciadora
+        
+        if (!isTesting) {
+            const inputValue = timeInputSpace.value.trim();
+
+            // Validación del tiempo ingresado
+            if (inputValue === "" || isNaN(inputValue) || Number(inputValue) <= 0 || Number(inputValue) > 60) {
+                alert("Por favor, introduce un número válido entre 1 y 60.");
+                timeInputSpace.value = "5"; // Restablecer a un valor predeterminado
+                return;
+            }
+
+            testDuration = parseInt(inputValue); // Asignar duración válida
+            startTest(); // Iniciar el test
+        } else if (!isSpacePressed) {
+            isSpacePressed = true;
+            registerClick(); // Registrar clic
+            // Efecto visual para el botón de espacio
+            spaceButton.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                spaceButton.style.transform = 'scale(1)';
+                isSpacePressed = false;
+            }, 100);
+        }
+    }
+});
+
+// Manejador para liberar la tecla espacio
+document.addEventListener('keyup', function(event) {
+    if (event.code === 'Space') {
+        isSpacePressed = false;
+    }
+});
+
+function registerClick() {
+    clicks++; // Incrementar contador de clics
+    resultDiv.textContent = `Clics actuales: ${clicks}`;
+}
+
+function startTest() {
+    clicks = 0; // Reiniciar contador de clics
+    isTesting = true; // Cambiar estado a "en prueba"
+    resultDiv.textContent = 'Clics actuales: 0';
+
+    timeoutID = setTimeout(() => {
+        endTest();
+    }, testDuration * 1000);
+}
+
+function stopTest() {
+    if (isTesting) {
+        clearTimeout(timeoutID);
+        isTesting = false;
+        resultDiv.textContent = '';
+    }
+}
+
+function endTest() {
+    isTesting = false; // Finalizar prueba
+    const cps = (clicks / testDuration).toFixed(2); // Calcular CPS
+    
+    // Mostrar resultados en el modal en lugar de un alert
+    modalContent.textContent = `Clics totales en ${testDuration} segundo(s): ${clicks}\nClics por segundo (CPS): ${cps}`;
+    modal.style.display = 'block';
+    
+    resultDiv.textContent = ''; // Limpiar resultado al finalizar
+    timeInput.value = "5"; // Restablecer valor predeterminado del input
+    timeInputSpace.value = "5";
+}
+
+// Cerrar el modal al hacer clic en la X
+closeBtn.onclick = function() {
+    modal.style.display = 'none';
+}
+
+// Cerrar el modal al hacer clic fuera del contenido
+window.onclick = function(event) {
+    if (event.target == modal) {
+        //No hacer nada
+    }
+}
+</script>
+</body>
+</html>
