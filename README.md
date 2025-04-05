@@ -21,3 +21,6 @@ This repository contains an **HTML-based application** designed to test users' c
 This application is ideal for measuring reaction speed and testing how fast you can click or press keys. It can also be used for fun challenges with friends! 
 
 Feel free to customize or improve the code to add new features or enhance its functionality.
+
+
+**YOU CAN RUN THIS CPSTEST IN [didi9662.github.io/cpstest](didi9662.github.io/cpstest)**
