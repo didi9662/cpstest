@@ -23,4 +23,4 @@ This application is ideal for measuring reaction speed and testing how fast you 
 Feel free to customize or improve the code to add new features or enhance its functionality.
 
 
-**YOU CAN RUN THIS CPSTEST IN [didi9662.github.io/cpstest](didi9662.github.io/cpstest)**
+**YOU CAN RUN THIS CPSTEST IN [didi9662.github.io/cpstest](https://didi9662.github.io/cpstest)**
